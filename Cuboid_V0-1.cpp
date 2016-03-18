@@ -7,6 +7,61 @@
 
 #include <SFML/Graphics.hpp>
 
+
+
+void move_step(sf::Vector3f& position, const sf::Vector3f& direction, const float delta_dist)
+{
+	assert(delta_dist > 0.0f);	
+	position = position + delta_dist*direction;
+}
+
+void rotate_stap(sf::Vector2f& posit, const float sin_phi, const float cos_phi)
+{
+	const sf::Vector2f temp{cos_phi*posit.x + sin_phi*posit.y, -sin_phi*posit.x + cos_phi*posit.y};
+	posit = temp;	
+}
+
+void rotate_step(sf::Vector3f& position, const sf::Vector3f& direction, const float sin_phi, const float cos_phi)
+{
+	assert(sin_phi != 0.0f);
+	assert(cos_phi != 1.0f);
+	
+	sf::Vector2f posit{0.0f, 0.0f};
+	
+	if (direction.x > 0.5f)
+	{
+		posit.x = position.y;
+		posit.y = position.z;
+		
+		rotate_stap(posit, sin_phi, cos_phi);
+		
+		position.y = posit.x;
+		position.z = posit.y;		
+	}
+	
+	if (direction.y > 0.5f)
+	{
+		posit.x = position.z;
+		posit.y = position.x;
+		
+		rotate_stap(posit, sin_phi, cos_phi);
+		
+		position.z = posit.x;
+		position.x = posit.y;		
+	}
+	
+	if (direction.z > 0.5f)
+	{
+		posit.x = position.x;
+		posit.y = position.y;
+		
+		rotate_stap(posit, sin_phi, cos_phi);
+		
+		position.x = posit.x;
+		position.y = posit.y;		
+	}
+}
+
 class cuboid
 {
 	sf::Color m_color{127, 127, 127};
@@ -63,6 +118,10 @@ class observoid
 	sf::Vector2f m_port_view{1.0f, 1.0f};
 	
 	sf::Vector2f m_port_window{1.0f, 1.0f};
+	
+	const float m_port_scale{m_port_window.x/m_port_view.x};
+	
+	
 	
 	
 };
