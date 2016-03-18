@@ -84,6 +84,10 @@ class cuboid
 	const float m_side_length{1.0f};
 	
 	std::vector <std::vector <std::vector <sf::Vector3f>>> m_abs_posits;
+	
+	sf::VertexArray m_quad{sf::Quads, 4};
+	
+	std::vector <sf::VertexArray> m_quads;
 
 	void setup_posits()
 	{		
@@ -117,6 +121,9 @@ class cuboid
 			}		
 		}		
 	}
+	
+	/// void set_quads_x()
+	
 		
 };
 
@@ -139,7 +146,7 @@ class observoid
 
 int main()
 {
-	const std::string program_name{"Cuboid V0.1"};
+	const std::string program_name{"Cuboid V0.2"};
 	assert(program_name != "");
 	
 	const float pi{4.0f*atan(1.0f)};
