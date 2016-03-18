@@ -9,7 +9,6 @@
 
 class cuboid
 {
-	
 	sf::Color m_color{127, 127, 127};
 	
 	sf::Vector3f m_central_posit{0.0f, 0.0f, 0.0f};
@@ -51,6 +50,19 @@ class cuboid
 		}		
 	}
 	
+	
+	
+};
+
+class observoid
+{
+	sf::Vector3f m_central_posit{0.0f, 0.0f, 0.0f};
+	
+	sf::Vector3f m_central_sight{1.0f, 0.0f, 0.0f};
+	
+	sf::Vector2f m_port_view{1.0f, 1.0f};
+	
+	sf::Vector2f m_port_window{1.0f, 1.0f};
 	
 	
 };
