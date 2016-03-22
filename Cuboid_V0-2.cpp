@@ -83,7 +83,13 @@ class cuboid
 	
 	const float m_side_length{1.0f};
 	
+	const float m_sin_phi{0.0f};
+	
+	const float m_cos_phi{1.0f};
+	
 	std::vector <std::vector <std::vector <sf::Vector3f>>> m_abs_posits;
+	
+	std::vector <sf::Vector3f> m_rel_posits;
 	
 	sf::VertexArray m_quad{sf::Quads, 4};
 	
@@ -122,7 +128,59 @@ class cuboid
 		}		
 	}
 	
-	/// void set_quads_x()
+	void init_posits()
+	{		
+		m_rel_posits.resize(8);
+	}
+	
+	void arrange_posits()
+	{
+		assert(m_side_length > 0.0f);
+		
+		for (int count{0}; count < 8; ++count)
+		{
+			m_rel_posits[count] =
+			m_central_posit +
+			0.5f*m_side_length*
+			sf::Vector3f((2.0f*(count % 2 ) - 1.0f), (2.0f*((count / 2) % 2) - 1.0f), (2.0f*(((count / 4) % 2) - 1.0f)));
+		}		
+	}
+	
+	void set_quads_x()
+	{
+		for (int count{0}; count < 6; ++count)
+		{
+			m_quads.push_back(m_quad);
+		}
+	}
+	
+	bool point_sighted()
+	{
+		// return in_view(const sf::Vector3f& position);
+		
+		return false;
+	}
+	
+	float closest()
+	{
+		float min_dist{1000000.0f};
+		
+		for(int count{0}; count < 8; ++count)
+		{
+			const float cur_dist{m_rel_posits[count].x*m_rel_posits[count].x +
+								 m_rel_posits[count].y*m_rel_posits[count].y +
+								 m_rel_posits[count].z*m_rel_posits[count].z};
+								 
+			if (cur_dist < min_dist)
+			{
+				min_dist = 	cur_dist;					
+			}
+		}
+		
+		return min_dist;
+	}
+	
+	
 	
 		
 };
