@@ -12,6 +12,12 @@ float distance_squared(const sf::Vector3f& distance)
 	return distance.x*distance.x + distance.y*distance.y + distance.z*distance.z;
 }
 
+float mean_squared(const sf::Vector3f& distance_1, const sf::Vector3f& distance_2,
+				   const sf::Vector3f& distance_3, const sf::Vector3f& distance_4)
+{
+	return 0.25f*(distance_squared(distance_1 + distance_2 + distance_3 + distance_4));
+}
+
 sf::Vector3f key_to_move()
 {
 	sf::Vector3f direction{0.0f, 0.0f, 0.0f};
@@ -345,7 +351,10 @@ class cuboid
 			m_quads[0][2].color = square_to_color(m_color, m_abs_squares[!m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]]);
 			m_quads[0][3].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]]);
 			
-			
+			m_average_squares[0] = 0.25f*(m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]] +
+										  m_abs_squares[!m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]] +
+										  m_abs_squares[!m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]] +
+										  m_abs_squares[m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]]);
 			
 			m_quads[1][0].position = three_to_two(m_abs_posits[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
 			m_quads[1][1].position = three_to_two(m_abs_posits[m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]]);
@@ -357,6 +366,11 @@ class cuboid
 			m_quads[1][2].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][!m_cubordinates[1]][!m_cubordinates[2]]);
 			m_quads[1][3].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
 			
+			m_average_squares[1] = 0.25f*(m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]] +
+										  m_abs_squares[m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]] +
+										  m_abs_squares[m_cubordinates[0]][!m_cubordinates[1]][!m_cubordinates[2]] +
+										  m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
+			
 			m_quads[2][0].position = three_to_two(m_abs_posits[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
 			m_quads[2][1].position = three_to_two(m_abs_posits[m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
 			m_quads[2][2].position = three_to_two(m_abs_posits[!m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
@@ -366,6 +380,11 @@ class cuboid
 			m_quads[2][1].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
 			m_quads[2][2].color = square_to_color(m_color, m_abs_squares[!m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
 			m_quads[2][3].color = square_to_color(m_color, m_abs_squares[!m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+			
+			m_average_squares[2] = 0.25f*(m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]] +
+										  m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]] +
+										  m_abs_squares[!m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]] +
+										  m_abs_squares[!m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
 		}
 	}
 	
@@ -373,6 +392,19 @@ class cuboid
 	{
 		if (m_sighted)
 		{
+			
+			
+			
+			for (int count{0}; count < 3; ++count)
+			{
+				
+				
+			}
+			
+			std::vector <sf::VertexArray> quads;
+			
+			
+			
 			for (int count{0}; count < 3; ++count)
 			{
 				window.draw(m_quads[count]);				
