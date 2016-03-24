@@ -7,7 +7,84 @@
 
 #include <SFML/Graphics.hpp>
 
+float distance_squared(const sf::Vector3f& distance)
+{
+	return distance.x*distance.x + distance.y*distance.y + distance.z*distance.z;
+}
 
+sf::Vector3f key_to_move()
+{
+	sf::Vector3f direction{0.0f, 0.0f, 0.0f};
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+	{
+		direction = sf::Vector3f (1.0f, 0.0f, 0.0f);	
+	}
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+	{
+		direction = sf::Vector3f (0.0f, 1.0f, 0.0f);	
+	}
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
+	{
+		direction = sf::Vector3f (0.0f, 0.0f, 1.0f);	
+	}
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+	{
+		direction = sf::Vector3f (-1.0f, 0.0f, 0.0f);	
+	}
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+	{
+		direction = sf::Vector3f (0.0f, -1.0f, 0.0f);	
+	}
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+	{
+		direction = sf::Vector3f (0.0f, 0.0f, -1.0f);	
+	}
+	
+	return direction;
+}
+
+sf::Vector3f key_to_rotate()
+{
+	sf::Vector3f direction{0.0f, 0.0f, 0.0f};
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::I))
+	{
+		direction = sf::Vector3f (1.0f, 0.0f, 0.0f);	
+	}
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::L))
+	{
+		direction = sf::Vector3f (0.0f, 1.0f, 0.0f);	
+	}
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::O))
+	{
+		direction = sf::Vector3f (0.0f, 0.0f, 1.0f);	
+	}
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::K))
+	{
+		direction = sf::Vector3f (-1.0f, 0.0f, 0.0f);	
+	}
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::J))
+	{
+		direction = sf::Vector3f (0.0f, -1.0f, 0.0f);	
+	}
+	
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::U))
+	{
+		direction = sf::Vector3f (0.0f, 0.0f, -1.0f);	
+	}
+	
+	return direction;
+}
 
 void move_step(sf::Vector3f& position, const sf::Vector3f& direction, const float delta_dist)
 {
@@ -25,40 +102,37 @@ void rotate_step(sf::Vector3f& position, const sf::Vector3f& direction, const fl
 {
 	assert(sin_phi != 0.0f);
 	assert(cos_phi != 1.0f);
-	assert(direction.x > -0.5f);
-	assert(direction.y > -0.5f);
-	assert(direction.z > -0.5f);
 	
 	sf::Vector2f posit{0.0f, 0.0f};
 	
-	if (direction.x > 0.5f)
+	if (std::abs(direction.x) > 0.5f)
 	{
 		posit.x = position.y;
 		posit.y = position.z;
 		
-		rotate_stap(posit, sin_phi, cos_phi);
+		rotate_stap(posit, direction.x*sin_phi, cos_phi);
 		
 		position.y = posit.x;
 		position.z = posit.y;		
 	}
 	
-	if (direction.y > 0.5f)
+	if (std::abs(direction.y) > 0.5f)
 	{
 		posit.x = position.z;
 		posit.y = position.x;
 		
-		rotate_stap(posit, sin_phi, cos_phi);
+		rotate_stap(posit, direction.y*sin_phi, cos_phi);
 		
 		position.z = posit.x;
 		position.x = posit.y;		
 	}
 	
-	if (direction.z > 0.5f)
+	if (std::abs(direction.z) > 0.5f)
 	{
 		posit.x = position.x;
 		posit.y = position.y;
 		
-		rotate_stap(posit, sin_phi, cos_phi);
+		rotate_stap(posit, direction.z*sin_phi, cos_phi);
 		
 		position.x = posit.x;
 		position.y = posit.y;		
@@ -67,12 +141,40 @@ void rotate_step(sf::Vector3f& position, const sf::Vector3f& direction, const fl
 
 bool in_view(const sf::Vector3f& position)
 {
-	if ((position.x >= position.y) && (position.x >= position.z))
+	if ((position.x >= std::abs(position.y)) && (position.x >= std::abs(position.z)) &&
+		 position.x > 0.0f)
 	{
 		return true;
 	}
 	
 	return false;
+}
+
+void cubordination(std::vector <bool>& cubords, const bool count_1, const bool count_2, const bool count_3)
+{
+	cubords = {count_1, count_2, count_3};	
+}
+
+sf::Vector2f three_to_two(const sf::Vector3f& position)
+{
+	return sf::Vector2f (0.5f*position.y/position.x, -0.5f*position.z/position.x);
+}
+
+sf::Color square_to_color(const sf::Color& color, const float square)
+{	
+	float mult{1.0f - 0.04f*square};
+	assert(mult <= 1.0f);
+	
+	if (mult < 0.0f)
+	{
+		mult = 0.0f;		
+	}
+	
+	const int red{static_cast<int>(mult*static_cast<float>(color.r))};
+	const int green{static_cast<int>(mult*static_cast<float>(color.g))};
+	const int blue{static_cast<int>(mult*static_cast<float>(color.b))};
+	
+	return sf::Color (red, green, blue);
 }
 
 class cuboid
@@ -83,18 +185,35 @@ class cuboid
 	
 	const float m_side_length{1.0f};
 	
+	const float m_delta_dist{0.0f};
+	
 	const float m_sin_phi{0.0f};
 	
 	const float m_cos_phi{1.0f};
 	
+	const std::vector <sf::Vector3f> m_directions{sf::Vector3f (1.0f, 0.0f, 0.0f),
+												  sf::Vector3f (0.0f, 1.0f, 0.0f),
+												  sf::Vector3f (0.0f, 0.0f, 1.0f),
+												  sf::Vector3f (-1.0f, 0.0f, 0.0f),
+												  sf::Vector3f (0.0f, -1.0f, 0.0f),
+												  sf::Vector3f (0.0f, 0.0f, -1.0f)};
+	
 	std::vector <std::vector <std::vector <sf::Vector3f>>> m_abs_posits;
 	
-	std::vector <sf::Vector3f> m_rel_posits;
+	std::vector <std::vector <std::vector <float>>> m_abs_squares;
+	
+	std::vector <bool> m_cubordinates{false, false, false};
+	
+	std::vector <sf::Vector3f> m_relative_posits;
+	
+	std::vector <float> m_square_distances;
+	
+	bool m_sighted{false};
 	
 	sf::VertexArray m_quad{sf::Quads, 4};
 	
-	std::vector <sf::VertexArray> m_quads;
-
+	std::vector <sf::VertexArray> m_quads{m_quad, m_quad, m_quad};
+	
 	void setup_posits()
 	{		
 		m_abs_posits.resize(2);
@@ -106,6 +225,21 @@ class cuboid
 			for (int count_2{0}; count_2 < 2; ++ count_2)
 			{
 				m_abs_posits[count_1][count_2].resize(2);
+			}			
+		}		
+	}
+
+	void setup_squares()
+	{		
+		m_abs_squares.resize(2);
+		
+		for (int count_1{0}; count_1 < 2; ++count_1)
+		{			
+			m_abs_squares[count_1].resize(2);
+			
+			for (int count_2{0}; count_2 < 2; ++ count_2)
+			{
+				m_abs_squares[count_1][count_2].resize(2);
 			}			
 		}		
 	}
@@ -128,56 +262,132 @@ class cuboid
 		}		
 	}
 	
-	void init_posits()
-	{		
-		m_rel_posits.resize(8);
-	}
-	
-	void arrange_posits()
+	void move_posits(const sf::Vector3f& direction)
 	{
-		assert(m_side_length > 0.0f);
+		move_step(m_central_posit, direction, m_delta_dist);
 		
-		for (int count{0}; count < 8; ++count)
+		for (int count_1{0}; count_1 < 2; ++count_1)
 		{
-			m_rel_posits[count] =
-			m_central_posit +
-			0.5f*m_side_length*
-			sf::Vector3f((2.0f*(count % 2 ) - 1.0f), (2.0f*((count / 2) % 2) - 1.0f), (2.0f*(((count / 4) % 2) - 1.0f)));
+			for (int count_2{0}; count_2 < 2; ++count_2)
+			{
+				for (int count_3{0}; count_3 < 2; ++count_3)
+				{
+					move_step(m_abs_posits[count_1][count_2][count_3], direction, m_delta_dist);
+				}				
+			}		
 		}		
 	}
 	
-	void set_quads_x()
+	void rotate_posits(const sf::Vector3f& direction)
 	{
-		for (int count{0}; count < 6; ++count)
+		rotate_step(m_central_posit, direction, m_sin_phi, m_cos_phi);
+		
+		for (int count_1{0}; count_1 < 2; ++count_1)
 		{
-			m_quads.push_back(m_quad);
+			for (int count_2{0}; count_2 < 2; ++count_2)
+			{
+				for (int count_3{0}; count_3 < 2; ++count_3)
+				{
+					rotate_step(m_abs_posits[count_1][count_2][count_3], direction, m_sin_phi, m_cos_phi);
+				}				
+			}		
 		}
 	}
 	
-	bool point_sighted()
-	{
-		// return in_view(const sf::Vector3f& position);
+	void calc_squares()
+	{	
+		m_sighted = false;
 		
-		return false;
+		for (int count_1{0}; count_1 < 2; ++count_1)
+		{
+			for (int count_2{0}; count_2 < 2; ++count_2)
+			{
+				for (int count_3{0}; count_3 < 2; ++count_3)
+				{
+					m_abs_squares[count_1][count_2][count_3] =
+					distance_squared(m_abs_posits[count_1][count_2][count_3]);
+					
+					m_sighted = in_view(m_abs_posits[count_1][count_2][count_3]);									
+				}				
+			}		
+		}		
 	}
 	
-	float closest()
+	void smallest_square()
 	{
-		float min_dist{1000000.0f};
-		
-		for(int count{0}; count < 8; ++count)
+		if (m_sighted)
 		{
-			const float cur_dist{m_rel_posits[count].x*m_rel_posits[count].x +
-								 m_rel_posits[count].y*m_rel_posits[count].y +
-								 m_rel_posits[count].z*m_rel_posits[count].z};
-								 
-			if (cur_dist < min_dist)
+			float small{1.0e20f};
+			
+			for (int count_1{0}; count_1 < 2; ++count_1)
 			{
-				min_dist = 	cur_dist;					
+				for (int count_2{0}; count_2 < 2; ++count_2)
+				{
+					for (int count_3{0}; count_3 < 2; ++count_3)
+					{
+						if (m_abs_squares[count_1][count_2][count_3] < small)
+						{
+							small = m_abs_squares[count_1][count_2][count_3];
+							cubordination(m_cubordinates, count_1, count_2, count_3);
+						}
+					}				
+				}		
 			}
 		}
+	}
+	
+	void color_rects()
+	{
 		
-		return min_dist;
+		
+		
+	}
+	
+	void cube_to_rects()
+	{
+		if (m_sighted)
+		{		
+			m_quads[0][0].position = three_to_two(m_abs_posits[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[0][1].position = three_to_two(m_abs_posits[!m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[0][2].position = three_to_two(m_abs_posits[!m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[0][3].position = three_to_two(m_abs_posits[m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]]);
+			
+			m_quads[0][0].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[0][1].color = square_to_color(m_color, m_abs_squares[!m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[0][2].color = square_to_color(m_color, m_abs_squares[!m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[0][3].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]]);
+			
+			m_quads[1][0].position = three_to_two(m_abs_posits[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[1][1].position = three_to_two(m_abs_posits[m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[1][2].position = three_to_two(m_abs_posits[m_cubordinates[0]][!m_cubordinates[1]][!m_cubordinates[2]]);
+			m_quads[1][3].position = three_to_two(m_abs_posits[m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
+			
+			m_quads[1][0].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[1][1].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][!m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[1][2].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][!m_cubordinates[1]][!m_cubordinates[2]]);
+			m_quads[1][3].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
+			
+			m_quads[2][0].position = three_to_two(m_abs_posits[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[2][1].position = three_to_two(m_abs_posits[m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
+			m_quads[2][2].position = three_to_two(m_abs_posits[!m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
+			m_quads[2][3].position = three_to_two(m_abs_posits[!m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+			
+			m_quads[2][0].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+			m_quads[2][1].color = square_to_color(m_color, m_abs_squares[m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
+			m_quads[2][2].color = square_to_color(m_color, m_abs_squares[!m_cubordinates[0]][m_cubordinates[1]][!m_cubordinates[2]]);
+			m_quads[2][3].color = square_to_color(m_color, m_abs_squares[!m_cubordinates[0]][m_cubordinates[1]][m_cubordinates[2]]);
+		}
+	}
+	
+	void show_rects(sf::RenderWindow& window)
+	{
+		if (m_sighted)
+		{
+			for (int count{0}; count < 3; ++count)
+			{
+				window.draw(m_quads[count]);				
+			}	
+		}	
 	}
 	
 	
