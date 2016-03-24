@@ -179,24 +179,17 @@ sf::Color square_to_color(const sf::Color& color, const float square)
 
 class cuboid
 {
-	sf::Color m_color{127, 127, 127};
+	const sf::Color m_color{127, 127, 127};
 	
 	sf::Vector3f m_central_posit{0.0f, 0.0f, 0.0f};
 	
 	const float m_side_length{1.0f};
 	
-	const float m_delta_dist{0.0f};
+	const float m_delta_dist{0.1f};
 	
 	const float m_sin_phi{0.0f};
 	
 	const float m_cos_phi{1.0f};
-	
-	const std::vector <sf::Vector3f> m_directions{sf::Vector3f (1.0f, 0.0f, 0.0f),
-												  sf::Vector3f (0.0f, 1.0f, 0.0f),
-												  sf::Vector3f (0.0f, 0.0f, 1.0f),
-												  sf::Vector3f (-1.0f, 0.0f, 0.0f),
-												  sf::Vector3f (0.0f, -1.0f, 0.0f),
-												  sf::Vector3f (0.0f, 0.0f, -1.0f)};
 	
 	std::vector <std::vector <std::vector <sf::Vector3f>>> m_abs_posits;
 	
@@ -204,13 +197,11 @@ class cuboid
 	
 	std::vector <bool> m_cubordinates{false, false, false};
 	
-	std::vector <sf::Vector3f> m_relative_posits;
-	
-	std::vector <float> m_square_distances;
+	std::vector <int> arrayenemyPos{0, 0, 0};
 	
 	bool m_sighted{false};
 	
-	sf::VertexArray m_quad{sf::Quads, 4};
+	const sf::VertexArray m_quad{sf::Quads, 4};
 	
 	std::vector <sf::VertexArray> m_quads{m_quad, m_quad, m_quad};
 	
@@ -261,6 +252,8 @@ class cuboid
 			}		
 		}		
 	}
+	
+	public:
 	
 	void move_posits(const sf::Vector3f& direction)
 	{
@@ -336,13 +329,6 @@ class cuboid
 		}
 	}
 	
-	void color_rects()
-	{
-		
-		
-		
-	}
-	
 	void cube_to_rects()
 	{
 		if (m_sighted)
@@ -390,27 +376,25 @@ class cuboid
 		}	
 	}
 	
+	cuboid(const sf::Color& color, const sf::Vector3f& central_posit,
+		   const float side_length, const float delta_dist, const float sin_phi, const float cos_phi)
+		   : m_color(color), m_central_posit(central_posit), m_side_length(side_length),
+		   m_delta_dist(delta_dist), m_sin_phi(sin_phi), m_cos_phi(cos_phi),
+		   m_abs_posits(), m_abs_squares()
+	{
+		setup_posits();
+		setup_squares();
+		place_posits();
+		calc_squares();
+	}
 	
+	~cuboid()
+	{
+	}
 	
-		
 };
 
-class observoid
-{
-	sf::Vector3f m_central_posit{0.0f, 0.0f, 0.0f};
-	
-	sf::Vector3f m_central_sight{1.0f, 0.0f, 0.0f};
-	
-	sf::Vector2f m_port_view{1.0f, 1.0f};
-	
-	sf::Vector2f m_port_window{1.0f, 1.0f};
-	
-	const float m_port_scale{m_port_window.x/m_port_view.x};
-	
-	
-	
-	
-};
+
 
 int main()
 {
@@ -421,6 +405,9 @@ int main()
 	
 	const float divisions{20.0f};
 	assert(divisions > 0.0f);
+	
+	const float side_length{1.0f};
+	assert(side_length > 0.0f);
 	
 	const float delta_dist{1.0f/divisions};
 	const float delta_phi{0.5f*pi/divisions};
@@ -447,10 +434,15 @@ int main()
 	
 	const sf::Color black{0, 0, 0};
 	const sf::Color light_purple{255, 127, 255};
+	const sf::Color light_orange{255, 195, 127};
 	
 	sf::RenderWindow window{sf::VideoMode(window_x, window_y), program_name, sf::Style::Default};
 	
-	const float dist{1.0f};
+	const sf::Vector3f central_posit{2.0f, 0.0f, 0.0f};
+	
+	cuboid kube(light_orange, central_posit, side_length, delta_dist, sin_phi, cos_phi);
+	
+	const float dist{0.5f};
 	assert(dist > 0.0f);
 	
 	sf::Vector2f area{dist, dist};
@@ -472,11 +464,21 @@ int main()
 		
 		sf::Clock clock;
 		
+		kube.calc_squares();
+		kube.smallest_square();
+		kube.cube_to_rects();
+		
+		
 		window.clear(black);
 		
 		window.draw(circle);
 		
+		kube.show_rects(window);
+		
 		window.display();
+		
+		kube.move_posits(key_to_move());
+		kube.rotate_posits(key_to_rotate());
 		
 		while (clock.getElapsedTime().asSeconds() < time_delta)
 		{
