@@ -561,21 +561,11 @@ int main()
 			kubes[count].move_posits(key_move);
 			kubes[count].rotate_posits(key_rotate);
 		}
-		
-		const cuboid kube_{kubes[0]};
-		
-		for (int count{0}; count < kube_numbers - 1; ++count)
-		{
-			kubes[count] = kubes[count + 1];
-		}
-		
-		kubes[2] = kube_;
-		
-		// std::sort (kubes.begin(), kubes.end());//, square_comp);
-		
+						
 		int nonswap_count{0};
+		int loop_count{0};
 		
-		while (nonswap_count != kube_numbers - 1)
+		while ((nonswap_count < kube_numbers - 1) && (loop_count < kube_numbers))
 		{
 			nonswap_count = 0;
 			
@@ -583,22 +573,28 @@ int main()
 			{
 				if (kubes[count].middle_square() < kubes[count + 1].middle_square())
 				{
-					const cuboid kube{kubes[count]};
-					kubes[count] = kubes[count + 1];
-					kubes[count + 1] = kube;
+					std::swap(kubes[count], kubes[count + 1]);
+					std::cout << "[" << count << ":" << count + 1 << "]\n";
+					std::cout << "[" << kubes[count].middle_square() << ":" << kubes[count + 1].middle_square() << "]\n";
 				}
 				else
 				{
 					++nonswap_count;
 				}
+				
+				std::cout << count << "\n";
 			}
 			
-			std::cout << "[" << kube_numbers -1 << ":" << nonswap_count << "]\n";
+			std::cout << "[" << kube_numbers - 1 << ":" << nonswap_count << "]\n";
+			
+			++loop_count;
 		}
 		
 		while (clock.getElapsedTime().asSeconds() < time_delta)
 		{
 		}
+		
+		std::cout << "Meganekko!\n";
 		
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
 		{
