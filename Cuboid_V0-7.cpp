@@ -7,6 +7,10 @@
 
 #include <SFML/Graphics.hpp>
 
+float distance_kernel(const sf::Vector3f& distance)
+{
+	return std::abs(distance.x + distance.y + distance.z);
+}
 
 float distance_squared(const sf::Vector3f& distance, const float sight_square, bool& sighted)
 {
@@ -40,7 +44,7 @@ sf::Color square_to_color(const sf::Color& color, const float square, const floa
 	return sf::Color (red, green, blue);
 }
 
-sf::Vector3f key_to_move()
+sf::Vector3f key_to_move(bool& moving)
 {
 	sf::Vector3f direction{0.0f, 0.0f, 0.0f};
 	
@@ -74,10 +78,15 @@ sf::Vector3f key_to_move()
 		direction = sf::Vector3f (0.0f, 0.0f, -1.0f);	
 	}
 	
+	if (!moving && (distance_kernel(direction) > 0.5f))
+	{
+		moving = true;
+	}
+	
 	return direction;
 }
 
-sf::Vector3f key_to_rotate()
+sf::Vector3f key_to_rotate(bool& rotating)
 {
 	sf::Vector3f direction{0.0f, 0.0f, 0.0f};
 	
@@ -109,6 +118,11 @@ sf::Vector3f key_to_rotate()
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::U))
 	{
 		direction = sf::Vector3f (1.0f, 0.0f, 0.0f);	
+	}
+	
+	if (!rotating && (distance_kernel(direction) > 0.5f))
+	{
+		rotating = true;
 	}
 	
 	return direction;
@@ -495,7 +509,6 @@ void order_kubes(std::vector <cuboid>& vis_kubes, const int vis_kube_numbers)
 
 void show_kubes(std::vector <cuboid>& vis_kubes, sf::RenderWindow& window, const int vis_kube_numbers)
 {
-	std::cout << vis_kube_numbers << "\n";
 	for (int count{0}; count < vis_kube_numbers; ++count)
 	{
 		vis_kubes[count].calc_squares();
@@ -546,11 +559,13 @@ int main()
 	const float divisions{20.0f};
 	assert(divisions > 0.0f);
 	
+	const int steps{static_cast<int>(divisions)};
+	
 	const float side_length{1.0f};
 	assert(side_length > 0.0f);
 	
 	const float delta_dist{1.0f/divisions};
-	const float delta_phi{0.25f*pi/divisions};
+	const float delta_phi{0.5f*pi/divisions};
 	const float sin_phi{sin(delta_phi)};
 	const float cos_phi{cos(delta_phi)};
 	
@@ -571,6 +586,7 @@ int main()
 	const sf::Vector2f window_sizes{window_x, window_y};
 	
 	const sf::Vector2f zero_point{0.0f, 0.0f};
+	const sf::Vector3f zero_posit{0.0f, 0.0f, 0.0f};
 	
 	const sf::Color black{0, 0, 0};
 	const sf::Color white{255, 255, 255};
@@ -651,6 +667,14 @@ int main()
 
 	window.setView(view);
 	
+	bool moving{false};
+	bool rotating{false};
+	
+	sf::Vector3f key_move{zero_posit};
+	sf::Vector3f key_rotate{zero_posit};
+	
+	int count_down{-1};
+	
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -665,13 +689,53 @@ int main()
 		
 		window.display();
 		
-		const sf::Vector3f key_move{key_to_move()};
-		const sf::Vector3f key_rotate{key_to_rotate()};
-				
-		for (int count{0}; count < kube_numbers; ++count)
+		if (count_down == -1)
+		{		
+			key_move = zero_posit;
+			key_rotate = zero_posit;
+
+			if (!moving)
+			{
+				key_move = key_to_move(moving);
+			}
+			
+			if (!rotating)
+			{
+				key_rotate = key_to_rotate(rotating);
+			}
+		
+			if (moving || rotating)
+			{
+				count_down = steps;
+			}			
+		}		
+		
+		if (count_down > 0)
 		{
-			kubes[count].move_posits(key_move);
-			kubes[count].rotate_posits(key_rotate);
+			if (moving)
+			{
+				for (int count{0}; count < kube_numbers; ++count)
+				{
+					kubes[count].move_posits(key_move);
+				}
+			}
+			
+			if (rotating)
+			{
+				for (int count{0}; count < kube_numbers; ++count)
+				{
+					kubes[count].rotate_posits(key_rotate);
+				}
+			}
+			
+			--count_down;
+			
+			if (count_down == 0)
+			{
+				moving = false;
+				rotating = false;
+				--count_down;
+			}		
 		}
 						
 		while (clock.getElapsedTime().asSeconds() < time_delta)
