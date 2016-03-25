@@ -596,7 +596,7 @@ void select_kubes(std::vector <cuboid>& kubes, sf::RenderWindow& window, const i
 
 int main()
 {
-	const std::string program_name{"Cuboid V0.7"};
+	const std::string program_name{"Cuboid V0.8"};
 	assert(program_name != "");
 	
 	const float pi{4.0f*atan(1.0f)};
