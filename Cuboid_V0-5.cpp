@@ -7,17 +7,15 @@
 
 #include <SFML/Graphics.hpp>
 
-bool in_view(const sf::Vector3f& position)
+void in_view(const sf::Vector3f& position, bool& sighted)
 {
-	const float mult{1.0f};
+	const float mult{1.5f};
 	
 	if ((mult*position.x >= std::abs(position.y)) && (mult*position.x >= std::abs(position.z)) &&
-		 position.x > 0.0f)
+		 (position.x > 0.0f))
 	{
-		return true;
-	}
-	
-	return false;
+		sighted = true;
+	}	
 }
 
 float distance_squared(const sf::Vector3f& distance, bool& sighted)
@@ -31,6 +29,11 @@ float distance_squared(const sf::Vector3f& distance, bool& sighted)
 	else
 	{
 		sighted = true;
+	}
+	
+	if (distance.x <= 0.0f)
+	{
+		sighted = false;
 	}
 	
 	return square;
@@ -189,7 +192,16 @@ void cubordination(std::vector <bool>& cubords, const bool count_1, const bool c
 
 sf::Vector2f three_to_two(const sf::Vector3f& position)
 {
-	return sf::Vector2f (0.5f*position.y/position.x, -0.5f*position.z/position.x);
+	const float tad{0.0000001f};
+	float posit_x{position.x};
+	
+	if (position.x <= 0.0f)
+	{
+		posit_x = tad;
+	}
+	
+	posit_x = 1/posit_x;	
+	return sf::Vector2f (0.5f*position.y*posit_x, -0.5f*position.z*posit_x);	
 }
 
 class cuboid
@@ -262,7 +274,9 @@ class cuboid
 				{
 					m_abs_posits[count_1][count_2][count_3] =
 					m_central_posit +
-					0.5f*m_side_length*sf::Vector3f((2.0f*count_1 - 1.0f), (2.0f*count_2 - 1.0f), (2.0f*count_3 - 1.0f));
+					0.5f*m_side_length*sf::Vector3f((2.0f*static_cast<float>(count_1) - 1.0f),
+													(2.0f*static_cast<float>(count_2) - 1.0f),
+													(2.0f*static_cast<float>(count_3) - 1.0f));
 				}				
 			}		
 		}		
@@ -314,7 +328,7 @@ class cuboid
 				{							
 					m_abs_squares[count_1][count_2][count_3] =
 					distance_squared(m_abs_posits[count_1][count_2][count_3], m_sighted);
-					m_sighted = in_view(m_abs_posits[count_1][count_2][count_3]);
+					in_view(m_abs_posits[count_1][count_2][count_3], m_sighted);
 				}				
 			}		
 		}		
@@ -465,7 +479,7 @@ bool square_comp(cuboid& cube_i, cuboid& cube_j)
 
 int main()
 {
-	const std::string program_name{"Cuboid V0.3"};
+	const std::string program_name{"Cuboid V0.5"};
 	assert(program_name != "");
 	
 	const float pi{4.0f*atan(1.0f)};
@@ -484,7 +498,7 @@ int main()
 	const float time_quant{0.001f};
 	assert(time_quant > 0.0f);
 	
-	const float time_mult{25.0f};
+	const float time_mult{15.0f};
 	assert(time_mult > 0.0f);
 	
 	const float time_delta{time_mult*time_quant};
@@ -500,25 +514,55 @@ int main()
 	const sf::Vector2f zero_point{0.0f, 0.0f};
 	
 	const sf::Color black{0, 0, 0};
+	const sf::Color white{255, 255, 255};
 	const sf::Color light_purple{255, 127, 255};
 	const sf::Color light_orange{255, 195, 127};
 	const sf::Color light_green{127, 255, 127};
 	const sf::Color light_blue{127, 127, 255};
 	
+	std::vector <sf::Color> colors{light_green,
+								   light_blue,
+								   light_orange,
+								   light_purple};
+								   
+	const int colors_count{static_cast<int>(colors.size())};	
+	
 	sf::RenderWindow window{sf::VideoMode(window_x, window_y), program_name, sf::Style::Default};
 	
-	const std::vector <sf::Vector3f> central_posits{sf::Vector3f (3.0f, 1.0f, 0.0f),
-													sf::Vector3f (4.0f, -2.0f, -1.0f),
-													sf::Vector3f (2.0f, 0.0f, 0.0f),
-													sf::Vector3f (2.0f, 2.0f, 2.0f)};
-													
-	const std::vector <sf::Color> kolors{light_green,
-										 light_blue,
-										 light_orange,
-										 light_purple};
-										 
+	const float spacing{1.0f};
+	assert(spacing > 0.0f);
+
+	std::vector <sf::Vector3f> central_posits;
+	
+		
+	const int jump_count{2};
+	assert(jump_count > 0);
+	
+	const int max_count{5};
+	assert(max_count > 0);
+	
+	for (int count_x{-max_count}; count_x <= max_count; count_x += jump_count)
+	{
+		for (int count_y{-max_count}; count_y <= max_count; count_y += jump_count)
+		{
+			for (int count_z{-max_count}; count_z <= max_count; count_z += jump_count)
+			{
+				central_posits.push_back(sf::Vector3f (spacing*static_cast<float>(count_x),
+													   spacing*static_cast<float>(count_y),
+													   spacing*static_cast<float>(count_z)));
+			}
+		}
+	}
+	
 	const int kube_numbers{static_cast<int>(central_posits.size())};
 													
+	std::vector <sf::Color> kolors;
+	
+	for (int count{0}; count < kube_numbers; ++count)
+	{
+		kolors.push_back(colors[count % colors_count]);
+	}
+														
 	std::vector <cuboid> kubes;
 	
 	for (int count{0}; count < kube_numbers; ++count)
@@ -528,6 +572,17 @@ int main()
 		
 	const float dist{0.5f};
 	assert(dist > 0.0f);
+	
+	const float radius{0.01f*dist};
+	assert(radius > 0.0f);
+	
+	const sf::Vector2f circle_posit{0.0f*dist, 0.0f*dist};
+	
+	sf::CircleShape circle{radius};
+	
+	circle.setOrigin(radius, radius);
+	circle.setPosition(circle_posit);
+	circle.setFillColor(white);
 	
 	sf::Vector2f area{dist, dist};
 	
@@ -556,6 +611,8 @@ int main()
 		{
 			kubes[count].show_rects(window);
 		}
+		
+		window.draw(circle);
 		
 		window.display();
 		
