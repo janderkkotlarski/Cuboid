@@ -147,7 +147,7 @@ void rotate_step(sf::Vector3f& position, const sf::Vector3f& direction, const fl
 
 bool in_view(const sf::Vector3f& position)
 {
-	const float mult{1.2f};
+	const float mult{5.0f};
 	
 	if ((mult*position.x >= std::abs(position.y)) && (mult*position.x >= std::abs(position.z)) &&
 		 position.x > 0.0f)
@@ -187,17 +187,17 @@ sf::Color square_to_color(const sf::Color& color, const float square)
 
 class cuboid
 {
-	const sf::Color m_color{127, 127, 127};
+	sf::Color m_color{127, 127, 127};
 	
 	sf::Vector3f m_central_posit{0.0f, 0.0f, 0.0f};
 	
-	const float m_side_length{1.0f};
+	float m_side_length{1.0f};
 	
-	const float m_delta_dist{0.1f};
+	float m_delta_dist{0.1f};
 	
-	const float m_sin_phi{0.0f};
+	float m_sin_phi{0.0f};
 	
-	const float m_cos_phi{1.0f};
+	float m_cos_phi{1.0f};
 	
 	std::vector <std::vector <std::vector <sf::Vector3f>>> m_abs_posits;
 	
@@ -209,7 +209,7 @@ class cuboid
 	
 	bool m_sighted{false};
 	
-	const sf::VertexArray m_quad{sf::Quads, 4};
+	sf::VertexArray m_quad{sf::Quads, 4};
 	
 	std::vector <sf::VertexArray> m_quads{m_quad, m_quad, m_quad};
 	
@@ -392,24 +392,46 @@ class cuboid
 	{
 		if (m_sighted)
 		{
-			
-			
+			float smallest{1.0e20f};
+			int last{-1};
+
+			int middle{-1};
+						
+			float biggest{-1.0f};
+			int first{-1};
 			
 			for (int count{0}; count < 3; ++count)
 			{
+				if (m_average_squares[count] < smallest)
+				{
+					smallest = m_average_squares[count];
+					last = count;
+				}
 				
-				
+				if (m_average_squares[count] > biggest)
+				{
+					biggest = m_average_squares[count];
+					first = count;
+				}				
 			}
 			
-			std::vector <sf::VertexArray> quads;
-			
-			
-			
 			for (int count{0}; count < 3; ++count)
 			{
-				window.draw(m_quads[count]);				
-			}	
+				if ((count != first) && (count != last))
+				{					
+					middle = count;
+				}
+			}
+			
+			window.draw(m_quads[first]);
+			window.draw(m_quads[middle]);
+			window.draw(m_quads[last]);
 		}	
+	}
+	
+	float middle_square()
+	{
+		return distance_squared(m_central_posit);
 	}
 	
 	cuboid(const sf::Color& color, const sf::Vector3f& central_posit,
@@ -430,7 +452,10 @@ class cuboid
 	
 };
 
-
+bool square_comp(cuboid& cube_i, cuboid& cube_j)
+{
+	return (cube_i.middle_square() > cube_j.middle_square());
+}
 
 int main()
 {
@@ -471,13 +496,30 @@ int main()
 	const sf::Color black{0, 0, 0};
 	const sf::Color light_purple{255, 127, 255};
 	const sf::Color light_orange{255, 195, 127};
+	const sf::Color light_green{127, 255, 127};
+	const sf::Color light_blue{127, 127, 255};
 	
 	sf::RenderWindow window{sf::VideoMode(window_x, window_y), program_name, sf::Style::Default};
 	
-	const sf::Vector3f central_posit{2.0f, 0.0f, 0.0f};
+	const std::vector <sf::Vector3f> central_posits{sf::Vector3f (3.0f, 1.0f, 0.0f),
+													sf::Vector3f (4.0f, -2.0f, -1.0f),
+													sf::Vector3f (2.0f, 0.0f, 0.0f),
+													sf::Vector3f (2.0f, 2.0f, 2.0f)};
+													
+	const std::vector <sf::Color> kolors{light_green,
+										 light_blue,
+										 light_orange,
+										 light_purple};
+										 
+	const int kube_numbers{static_cast<int>(central_posits.size())};
+													
+	std::vector <cuboid> kubes;
 	
-	cuboid kube(light_orange, central_posit, side_length, delta_dist, sin_phi, cos_phi);
-	
+	for (int count{0}; count < kube_numbers; ++count)
+	{
+		kubes.push_back(cuboid (kolors[count], central_posits[count], side_length, delta_dist, sin_phi, cos_phi));
+	}
+		
 	const float dist{0.5f};
 	assert(dist > 0.0f);
 	
@@ -487,11 +529,6 @@ int main()
 	view.setCenter(zero_point);
 	view.setSize(area);
 
-	const float radius{0.5f*dist};
-	
-	sf::CircleShape circle(radius);
-	circle.setOrigin(radius, radius);
-	circle.setFillColor(light_purple);
 	window.setView(view);
 	
 	while (window.isOpen())
@@ -500,21 +537,64 @@ int main()
 		
 		sf::Clock clock;
 		
-		kube.calc_squares();
-		kube.smallest_square();
-		kube.cube_to_rects();
-		
+		for (int count{0}; count < kube_numbers; ++count)
+		{
+			kubes[count].calc_squares();
+			kubes[count].smallest_square();
+			kubes[count].cube_to_rects();			
+		}
 		
 		window.clear(black);
 		
-		window.draw(circle);
-		
-		kube.show_rects(window);
+		for (int count{0}; count < kube_numbers; ++count)
+		{
+			kubes[count].show_rects(window);
+		}
 		
 		window.display();
 		
-		kube.move_posits(key_to_move());
-		kube.rotate_posits(key_to_rotate());
+		const sf::Vector3f key_move{key_to_move()};
+		const sf::Vector3f key_rotate{key_to_rotate()};
+				
+		for (int count{0}; count < kube_numbers; ++count)
+		{
+			kubes[count].move_posits(key_move);
+			kubes[count].rotate_posits(key_rotate);
+		}
+		
+		const cuboid kube_{kubes[0]};
+		
+		for (int count{0}; count < kube_numbers - 1; ++count)
+		{
+			kubes[count] = kubes[count + 1];
+		}
+		
+		kubes[2] = kube_;
+		
+		// std::sort (kubes.begin(), kubes.end());//, square_comp);
+		
+		int nonswap_count{0};
+		
+		while (nonswap_count != kube_numbers - 1)
+		{
+			nonswap_count = 0;
+			
+			for (int count{0}; count < kube_numbers - 1; ++count)
+			{
+				if (kubes[count].middle_square() < kubes[count + 1].middle_square())
+				{
+					const cuboid kube{kubes[count]};
+					kubes[count] = kubes[count + 1];
+					kubes[count + 1] = kube;
+				}
+				else
+				{
+					++nonswap_count;
+				}
+			}
+			
+			std::cout << "[" << kube_numbers -1 << ":" << nonswap_count << "]\n";
+		}
 		
 		while (clock.getElapsedTime().asSeconds() < time_delta)
 		{
